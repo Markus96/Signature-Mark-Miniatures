@@ -1,13 +1,38 @@
-from flask import Flask, render_template, redirect, url_for, request, session
-from flask_pymongo import PyMongo
-from bson.objectid import ObjectId
-from forms import RegistrationForm, LoginForm
+import os
+import pymongo
+from bson import ObjectId
+from flask import Flask, render_template, request, redirect, url_for, session
 from werkzeug.security import generate_password_hash, check_password_hash
+from forms import RegistrationForm, LoginForm  # Ensure these forms are defined in forms.py
 
+# Load environment variables if available
+if os.path.exists("env.py"):
+    import env
+
+# MongoDB URI and Database setup
+MONGO_URI = os.environ.get("MONGO_URI")
+DATABASE = "resin_3d_printing"
+USERS_COLLECTION = "Users"
+PRODUCTS_COLLECTION = "Products"
+
+# Initialize Flask app
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
-app.config['MONGO_URI'] = 'mongodb://localhost:27017/resin_3d_printing'
-mongo = PyMongo(app)
+
+# MongoDB connection function
+def mongo_connect(URL):
+    try:
+        conn = pymongo.MongoClient(URL)
+        print("Mongo is connected")
+        return conn
+    except pymongo.errors.ConnectionFailure as e:
+        print(f"Could not connect to MongoDB: {e}")
+
+# Connect to MongoDB
+conn = mongo_connect(MONGO_URI)
+db = conn[DATABASE]
+users_collection = db[USERS_COLLECTION]
+products_collection = db[PRODUCTS_COLLECTION]
 
 @app.route('/')
 def home():
@@ -18,7 +43,7 @@ def register():
     form = RegistrationForm()
     if form.validate_on_submit():
         hashed_password = generate_password_hash(form.password.data, method='sha256')
-        mongo.db.users.insert_one({
+        users_collection.insert_one({
             'username': form.username.data,
             'email': form.email.data,
             'password': hashed_password
@@ -30,7 +55,7 @@ def register():
 def login():
     form = LoginForm()
     if form.validate_on_submit():
-        user = mongo.db.users.find_one({'email': form.email.data})
+        user = users_collection.find_one({'email': form.email.data})
         if user and check_password_hash(user['password'], form.password.data):
             session['user_id'] = str(user['_id'])
             return redirect(url_for('home'))
@@ -38,7 +63,7 @@ def login():
 
 @app.route('/products')
 def products():
-    products = mongo.db.products.find()
+    products = products_collection.find()
     return render_template('products.html', products=products)
 
 if __name__ == '__main__':
