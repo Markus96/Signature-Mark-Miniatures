@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Products{% endblock %}
+
+{% block content %}
+<h2>Our Miniatures</h2>
+<div class="product-grid">
+    {% for product in products %}
+        <div class="product-card">
+            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image">
+            <h3>{{ product.name }}</h3>
+            <p>{{ product.description }}</p>
+            <p><strong>Price:</strong> {{ product.currency }} {{ product.cost }}</p>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

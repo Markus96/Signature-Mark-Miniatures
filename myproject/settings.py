@@ -51,4 +51,9 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# Other settings like TIME_ZONE, USE_TZ, etc.
+import os
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+ALLOWED_HOSTS = ["127.0.0.1", "localhost", ".gitpod.io"]
